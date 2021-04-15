@@ -9,8 +9,8 @@ Inputs:
 '''
 
 import pandas as pd
-import matplotlib.pyplot as plt
 import sys
+import seaborn as sns
 
 def verify_columns(cols):
     '''
@@ -106,6 +106,8 @@ def numeric_analysis(df):
 
 def date_analysis(df, granularity = 0):
     '''
+    Plotting events by date.
+
     granularity can be:
         0: monthly
         1: daily
@@ -131,6 +133,41 @@ def date_analysis(df, granularity = 0):
 
     # Plotting
     plt.show()
+
+def plotting(df, granularitty = 0):
+    # months = df['FECHA_REAL'].dt.month
+    # df_MONTH = df.join(months, rsuffix='_MONTH')
+    # #df_MONTH[['FECHA_REAL', 'FECHA_REAL_MONTH']]   # verify month and date match
+
+    # fig, ax = plt.subplots()
+
+    # # Count RDA errors by day
+    # if granularity == 1:
+        # instances_by_day = df['FECHA_REAL'].dt.floor('d').value_counts()
+        # ax.bar(instances_by_day.index, instances_by_day.values)
+    # else:
+        # y = df['FECHA_REAL'].dt.year
+        # m = df['FECHA_REAL'].dt.month
+
+        # instances_by_day = df['FECHA_REAL'].groupby([df.FECHA_REAL.dt.year, df.FECHA_REAL.dt.month]).agg('count')
+        # xs = instances_by_day.index.to_series().apply(lambda x: '{0}-{1}'.format(*x))
+        # ax.plot(xs, instances_by_day.values)
+    # instances_by_day.sort_index(inplace=True)
+
+    # # Plotting
+    # plt.show()
+
+
+
+    instances_by_day = df['FECHA_REAL'].dt.floor('d').value_counts()
+
+    sns.displot(
+        data=instances_by_day,
+        # x="carat", hue="cut",
+        kind="kde", height=6,
+        multiple="fill", clip=(0, None),
+        palette="ch:rot=-.25,hue=1,light=.75",
+    )
 
 def rda_analysis():
     directory = None
@@ -159,8 +196,10 @@ def rda_analysis():
     # --------------------------------
     # pick the type of analysis wanted
     # --------------------------------
+
     # numeric_analysis(numeric_df)
-    date_analysis(date_df)
+    # date_analysis(date_df)
+    plotting(date_df)
 
 if __name__ == '__main__':
     rda_analysis()
