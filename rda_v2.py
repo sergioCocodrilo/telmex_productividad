@@ -1,9 +1,11 @@
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date, timedelta, time
 import numpy as np
 import socket
 import os
-import plotext as plt
+# import plotext as plt
+
+from plotter import Plotter as plt
 
 ##############################
 # Data Loading
@@ -61,8 +63,34 @@ def hourly_reports(df, cm_to_filter = None):
             except KeyError:
                 ys.append(0)
                 
-        plt.hist(xs, 24, label="mean 0")
-        plt.show()
+        plot = plt(80)
+        plot.set_values(xs, ys, 'HORA', 'Reportes')
+        plot.show(col)
+
+
+        # Análisis por turno
+        xys = {
+                'mat' : 0,
+                'vesp': 0,
+                'noct': 0,
+                }
+
+        for x, y  in zip(xs, ys):
+            if 7 < x < 17:
+                xys['mat'] += y
+            elif 16 < x < 24:
+                xys['vesp'] += y
+            else:
+                xys['noct'] += y
+
+        plot = plt(80)
+        plot.set_values(xys.keys(), xys.values(), 'Turno', 'Reportes')
+        plot.show(col)
+        print()
+        print()
+        print()
+
+
 
 def main():
     df = load_data()
