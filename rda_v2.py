@@ -11,7 +11,7 @@ from plotter import Plotter as plt
 # Data Loading
 ##############################
 
-def load_data(file_prefix = 'rdat_metro'):
+def load_data(sheet_name, file_prefix = 'rdat_metro'):
     hostname = socket.gethostname()
     if hostname == 'arch':
         directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
@@ -24,7 +24,7 @@ def load_data(file_prefix = 'rdat_metro'):
 
     for f in os.listdir(directory):
         if f.startswith(file_prefix):
-            df_tmp = pd.read_excel(directory + f, sheet_name='base')
+            df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
             columns.append(df_tmp.columns)
             df = df.append(df_tmp)
             
@@ -35,7 +35,7 @@ def load_data(file_prefix = 'rdat_metro'):
 ##############################
 # TIME-RELATED REPORTS
 ##############################
-def hourly_reports(df, plot_length, col = '', cm_to_filter = None):
+def hourly_reports(df, plot_length, col = ''):
     cols = [
         'HORATLMI',
         'HORACTEI',
@@ -45,9 +45,6 @@ def hourly_reports(df, plot_length, col = '', cm_to_filter = None):
 
     if col in cols:
         cols = [col]
-
-    if cm_to_filter is not None:
-        df = df[df['CMANTENI'] == cm_to_filter]
 
     for i, col in enumerate(cols):
         # remove nan values
@@ -146,35 +143,48 @@ def repetitions_analysis(df):
         print(values)
         print()
 
-def numeric_analysis(df, cm = None):
-    if cm is None:
-        df_int = df.select_dtypes('number')
-    else:
-        df_int = df[df['CMANTENI'] == cm].select_dtypes('number')
-    print(df_int.describe())
+def numeric_analysis(df):
+    print(df.describe())
 
 def main():
-    df = load_data()
+    sheet_name = input('¿Qué hoja quieres analizar? ')
+    print('Cargando los datos...')
+    df = load_data(sheet_name)
+
+    cm = input('¿Qué CM te interesa? (Dejar en blanco para no filtrar datos por CM.) ')
+    if len(cm) > 2:
+        df_tmp = df[df['CMANTENI'] == cm]
+
+    if df_tmp.shape[0] == 0:
+        print('No se encontró ningún CM con el nombre propocionado.')
+        print('El nombre debe coincidir con alguno de los presentes en los reportes.')
+        print('Los únicos CM encontrados son:')
+        # for cm in df['CMANTENI'].unique():
+        for cm in sorted(df[df['CMANTENI'].notnull()]['CMANTENI'].unique()):
+            print(f'\t{cm}')
+        return
+    print(f'Los datos tienen {df.shape[1]} columnas y {df.shape[0]} renglones.')
+
+    df = df_tmp
+    
 
     # SPLIT DATA BY COLUMNS' TYPE
     # date_cols = df.select_dtypes('datetime')
 
     # hour analysis
-    hourly_reports(df, 60, cm_to_filter = 'CMABS', col = 'HORA_REAL')
-    # hourly_reports(df, 60, col = 'HORA_REAL')
+    hourly_reports(df, 60, col = 'HORA_REAL')
 
     # daily reports - seem useless
     # daily_reports(df[df['CMANTENI'] == 'CMABS'], 40)
     # daily_reports(df, 142)
 
     # monthly reports
-    monthly_report(df[df['CMANTENI'] == 'CMABS'], 142)
-    # monthly_report(df, 142)
+    monthly_report(df, 142)
 
     df_obj = df.select_dtypes(object)
-    repetitions_analysis(df_obj[df_obj['CMANTENI'] == 'CMABS'])
+    repetitions_analysis(df_obj)
 
-    numeric_analysis(df, cm = 'CMABS')
+    numeric_analysis(df)
 
 if __name__ == '__main__':
     main()
