@@ -24,7 +24,11 @@ def load_data(sheet_name, file_prefix = 'rdat_metro'):
 
     for f in os.listdir(directory):
         if f.startswith(file_prefix):
-            df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
+            try:
+                df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
+            except:
+                print(f'No se encontró la hoja "{sheet_name}", favor de verificar el nombre.')
+                exit(1)
             columns.append(df_tmp.columns)
             df = df.append(df_tmp)
             
