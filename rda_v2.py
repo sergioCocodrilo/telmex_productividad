@@ -3,6 +3,7 @@ from datetime import date, timedelta, time
 import numpy as np
 import socket
 import os
+
 # import plotext as plt
 
 from plotter import Plotter as plt
@@ -189,6 +190,8 @@ def main():
     repetitions_analysis(df_obj)
 
     numeric_analysis(df)
+
+app = typer.Typer()
 
 if __name__ == '__main__':
     main()
