@@ -7,17 +7,17 @@ import os
 
 from plotter import Plotter as plt
 
-def leer_archivos(prefijo: str = 'rdat_metro'):
+def leer_archivos(directory: pd.DataFrame, prefijo: str = 'rdat_metro') -> pd.DataFrame:
     '''
     Lee los archivos de los reportes de productividad.
     Si un 'prefijo' es proporcionado, se seleccionan únicamente los archivos que
     inicien con ese nombre. El 'prefijo' determinado es 'rdat_metro'.
     '''
-    hostname = socket.gethostname()
-    if hostname == 'arch':
-        directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
-    else:
-        directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
+    # hostname = socket.gethostname()
+    # if hostname == 'arch':
+        # directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
+    # else:
+        # directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
 
     df = pd.DataFrame()
     rda_files = []
@@ -35,7 +35,7 @@ def leer_archivos(prefijo: str = 'rdat_metro'):
 ##############################
 # TIME-RELATED REPORTS
 ##############################
-def reportes_por_hora(datos: pd.DataFrame, ancho_de_grafica: str, tipo_de_hora: str = '', cm: str = None):
+def reportes_por_hora(datos: pd.DataFrame, ancho_de_grafica: str, tipo_de_hora: str = '', cm: str = None) -> None:
     '''
     Análisis de los reportes por la hora en que ocurrieron.
     Se consideran tres 'tipo_de_hora':
@@ -113,11 +113,8 @@ def reportes_por_hora(datos: pd.DataFrame, ancho_de_grafica: str, tipo_de_hora: 
         plot = plt(plot_length)
         plot.set_values(xys.keys(), xys.values(), 'Turno', 'Reportes')
         plot.show(col)
-        print()
-        print()
-        print()
 
-def instances_dictionary(instances: pd.Series, dates: list):
+def instances_dictionary(instances: pd.Series, dates: list) -> dict:
     '''Función para control interno.'''
     # Make an dictionary of dates and instances (zeros included)
     partial_instances = dict() # instances present in the data
@@ -130,7 +127,7 @@ def instances_dictionary(instances: pd.Series, dates: list):
     
     return instances
 
-def reportes_por_dia(datos: pd.DataFrame, ancho_de_grafica: int, cm: str = None):
+def reportes_por_dia(datos: pd.DataFrame, ancho_de_grafica: int, cm: str = None) -> None:
     '''
     Análisis de los reportes por el día en que ocurrieron.
 
@@ -167,7 +164,7 @@ def reportes_por_dia(datos: pd.DataFrame, ancho_de_grafica: int, cm: str = None)
     plot.set_values(instances.keys(), instances.values(), 'Día', 'Reportes')
     plot.show('Reportes por día')
 
-def reporte_mensual(datos: pd.DataFrame, ancho_de_grafica: str, cm = None):
+def reporte_mensual(datos: pd.DataFrame, ancho_de_grafica: str, cm = None) -> None:
     '''
     Análisis mensual de los reportes.
 
@@ -192,7 +189,7 @@ def reporte_mensual(datos: pd.DataFrame, ancho_de_grafica: str, cm = None):
     plot.set_values(instances_by_month['year_month'], instances_by_month['FECHA_REAL'], 'Mes', 'Reportes')
     plot.show('Reportes por mes')
 
-def analisis_de_repeticiones(datos: pd.DataFrame, cm = None):
+def analisis_de_repeticiones(datos: pd.DataFrame, cm = None) -> None:
     '''
     Analiza las columnas con datos de tipo texto (no numéricos). Cuenta las
     instancias más presentes en los datos e imprime las 8 más frecuentes.
@@ -214,7 +211,7 @@ def analisis_de_repeticiones(datos: pd.DataFrame, cm = None):
         print(values)
         print()
 
-def analisis_numerico(datos: pd.DataFrame, cm: str = None):
+def analisis_numerico(datos: pd.DataFrame, cm: str = None) -> None:
     '''
     Descripción de datos numéricos con media, desviación estándard, percentiles.
 
@@ -233,7 +230,7 @@ def analisis_numerico(datos: pd.DataFrame, cm: str = None):
         df_int = df[df['CMANTENI'] == cm].select_dtypes('number')
     print(df_int.describe())
 
-def main():
+def main() -> None:
     df = leer_archivos()
 
     # SPLIT DATA BY COLUMNS' TYPE
