@@ -3,57 +3,50 @@ from datetime import date, timedelta, time
 import numpy as np
 import socket
 import os
+import argparse
 # import plotext as plt
 
 from plotter import Plotter as plt
 
-def leer_archivos(directory: pd.DataFrame, prefijo: str = 'rdat_metro') -> pd.DataFrame:
-    '''
-    Lee los archivos de los reportes de productividad.
-    Si un 'prefijo' es proporcionado, se seleccionan únicamente los archivos que
-    inicien con ese nombre. El 'prefijo' determinado es 'rdat_metro'.
-    '''
-    # hostname = socket.gethostname()
-    # if hostname == 'arch':
-        # directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
-    # else:
-        # directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
+def load_data(sheet_name, directory, file_prefix: str = 'rdat_metro'):
+    '''Loads the Excel reports of the productivity.'''
+    hostname = socket.gethostname()
+    if directory is None:
+        if hostname == 'arch':
+            directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
+        else:
+            directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
 
     df = pd.DataFrame()
     rda_files = []
     columns = []
 
     for f in os.listdir(directory):
-        if f.startswith(prefijo):
-            df_tmp = pd.read_excel(directory + f, sheet_name='base')
+        if f.startswith(file_prefix):
+            df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
             columns.append(df_tmp.columns)
             df = df.append(df_tmp)
             
     return df
 
 
+
 ##############################
 # TIME-RELATED REPORTS
 ##############################
-def por_hora(datos: pd.DataFrame, ancho_de_grafica: str, tipo_de_hora: str = '', cm: str = None) -> None:
+def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filter: str = None):
     '''
-    Análisis de los reportes por la hora en que ocurrieron.
-    Se consideran tres 'tipo_de_hora':
+    Analysis of the reports by hour of ocurrence.
+    Three types of time data are considered:
         - HORATLMI
         - HORACTEI
         - HORATLMF
         - HORA_REAL
 
-    Además, los reportes se agrupan por turnos:
+    Additionally, reports are grouped by ship, i.e.:
         - matutino
         - vespertino
         - nocturno
-
-    Parámetros:
-        - datos [obligatorio]: variable con los reportes cargados
-        - ancho_de_gráfica [obligatorio]: tamaño horizontal de la gráfica
-        - tipo_de_hora [opcional]: reportar sólo los resultados de un tipo de hora
-        - cm [opcional]: filtrar los datos por CM
     '''
     cols = [
         'HORATLMI',
@@ -61,11 +54,6 @@ def por_hora(datos: pd.DataFrame, ancho_de_grafica: str, tipo_de_hora: str = '',
         'HORATLMF',
         'HORA_REAL',
     ]
-
-    df = datos
-    plot_length = ancho_de_grafica
-    col = tipo_de_hora
-    cm_to_filter = cm
 
     if col in cols:
         cols = [col]
@@ -113,9 +101,11 @@ def por_hora(datos: pd.DataFrame, ancho_de_grafica: str, tipo_de_hora: str = '',
         plot = plt(plot_length)
         plot.set_values(xys.keys(), xys.values(), 'Turno', 'Reportes')
         plot.show(col)
+        print()
+        print()
+        print()
 
-def instances_dictionary(instances: pd.Series, dates: list) -> dict:
-    '''Función para control interno.'''
+def instances_dictionary(instances: pd.Series, dates: list):
     # Make an dictionary of dates and instances (zeros included)
     partial_instances = dict() # instances present in the data
     for k, v in instances.iteritems():
@@ -127,22 +117,7 @@ def instances_dictionary(instances: pd.Series, dates: list) -> dict:
     
     return instances
 
-def por_dia(datos: pd.DataFrame, ancho_de_grafica: int, cm: str = None) -> None:
-    '''
-    Análisis de los reportes por el día en que ocurrieron.
-
-    Parámetros:
-        - datos [obligatorio]: variable con los reportes cargados
-        - ancho_de_grafica [obligatorio]: tamaño horizontal de la gráfica
-        - cm [opcional]: filtrar los datos por CM
-    '''
-
-    df = datos
-    plot_length = ancho_de_grafica
-
-    if cm is not None:
-        df = df[df['CMANTENI'] == cm]
-
+def daily_reports(df: pd.DataFrame, plot_length: int):
     # BUILD ALL DATES
     start_date = df['FECHA_REAL'].min().date()
     end_date = df['FECHA_REAL'].max().date()
@@ -164,21 +139,7 @@ def por_dia(datos: pd.DataFrame, ancho_de_grafica: int, cm: str = None) -> None:
     plot.set_values(instances.keys(), instances.values(), 'Día', 'Reportes')
     plot.show('Reportes por día')
 
-def por_mes(datos: pd.DataFrame, ancho_de_grafica: str, cm = None) -> None:
-    '''
-    Análisis mensual de los reportes.
-
-    Parámetros:
-        - datos [obligatorio]: variable con los reportes cargados
-        - ancho_de_grafica [obligatorio]: tamaño horizontal de la gráfica
-        - cm [opcional]: filtrar los datos por CM
-    '''
-    df = datos
-    plot_length = ancho_de_grafica
-
-    if cm is not None:
-        df = df[df['CMANTENI'] == cm]
-
+def monthly_report(df: pd.DataFrame, plot_length: str):
     instances_by_month = df['FECHA_REAL'].groupby([df.FECHA_REAL.dt.year, df.FECHA_REAL.dt.month]).agg('count')
     instances_by_month = pd.DataFrame(instances_by_month)
     instances_by_month['year_month'] = instances_by_month.index.to_series().apply(lambda x: '{0}-{1:02}'.format(*x))
@@ -189,69 +150,59 @@ def por_mes(datos: pd.DataFrame, ancho_de_grafica: str, cm = None) -> None:
     plot.set_values(instances_by_month['year_month'], instances_by_month['FECHA_REAL'], 'Mes', 'Reportes')
     plot.show('Reportes por mes')
 
-def datos_que_se_repiten(datos: pd.DataFrame, cm = None) -> None:
-    '''
-    Analiza las columnas con datos de tipo texto (no numéricos). Cuenta las
-    instancias más presentes en los datos e imprime las 8 más frecuentes.
-
-    Se realiza una impresión por columna, la impresión incluye 8 renglones.
-
-    Parámetros:
-        - datos [obligatorio]
-        - cm [opcional]: filtrar por CM
-    '''
-    df = datos
-
-    if cm is not None:
-        df = df[df['CMANTENI'] == cm]
-
+def repetitions_analysis(df: pd.DataFrame):
+    # For each column, counts the values and prints the first 8 rows
     for col in df.columns:
         values = pd.DataFrame(df[col].value_counts()[:8])
         values['percentage'] = values / 59 * 100
         print(values)
         print()
 
-def numerico(datos: pd.DataFrame, cm: str = None) -> None:
-    '''
-    Descripción de datos numéricos con media, desviación estándard, percentiles.
-
-    Parámetros:
-        - datos [obligatorio]
-        - cm [opcional]: filtrar por CM
-    '''
-    df = datos
-
-    if cm is not None:
-        df = df[df['CMANTENI'] == cm]
-
+def numeric_analysis(df: pd.DataFrame, cm: str = None):
     if cm is None:
         df_int = df.select_dtypes('number')
     else:
         df_int = df[df['CMANTENI'] == cm].select_dtypes('number')
     print(df_int.describe())
 
-def main() -> None:
-    df = leer_archivos()
+def main(argv = None):
+
+    # check arguments
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('-g', '--grafica', help='Ancho de gráfica', type = int, required = True)
+    parser.add_argument('-d', '--directory', help='xls files directory', type = str, required = False)
+    parser.add_argument('-cm', help='Centro de Mantenimiento', type = str, required = False)
+    parser.add_argument('-s', '--sheet', help='Sheet name for pandas', type = str, required = True)
+    parser.add_argument('-p', '--prefix', help='Common prefix of xls files', type=str, required = True)
+    # parser.add_argument('-th', '--hora', help='Tipo de hora', type=str, required = True)
+
+    args = parser.parse_args(argv)
+    df = load_data(args.sheet, args.directory, args.prefix)
+
+    if args.cm is not None:
+        df_tmp = df[df['CMANTENI'] == args.cm]
+        if df_tmp.shape[0] < 1:
+            print('Your CM filter resulted in no rows.')
+            return 0
+        df = df_tmp
 
     # SPLIT DATA BY COLUMNS' TYPE
     # date_cols = df.select_dtypes('datetime')
 
     # hour analysis
-    por_hora(df, 60, cm_to_filter = 'CMABS', col = 'HORA_REAL')
-    # por_hora(df, 60, col = 'HORA_REAL')
+    hourly_reports(df, 60, col = 'HORA_REAL')
 
     # daily reports - seem useless
-    # por_dia(df[df['CMANTENI'] == 'CMABS'], 40)
-    # por_dia(df, 142)
+    daily_reports(df, 142)
 
     # monthly reports
-    por_mes(df[df['CMANTENI'] == 'CMABS'], 142)
-    # por_mes(df, 142)
+    monthly_report(df, 142)
 
     df_obj = df.select_dtypes(object)
-    datos_que_se_repiten(df_obj[df_obj['CMANTENI'] == 'CMABS'])
+    repetitions_analysis(df_obj)
 
-    numerico(df, cm = 'CMABS')
+    numeric_analysis(df)
+
 
 if __name__ == '__main__':
     main()

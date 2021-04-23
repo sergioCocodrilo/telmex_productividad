@@ -34,11 +34,20 @@ def main(argv = None):
 
     # read files
     df = rda_spanish.leer_archivos(args.directorio, args.prefijo)
-    return df
 
-    commands = [f for f in inspect.getmembers(rda_spanish) if inspect.isfunction(f[1])]
+    public_commands = [
+            'datos_que_se_repiten',
+            'numerico',
+            'por_mes',
+            'por_dia',
+            'por_hora',
+            ]
+
+
+    # commands = [f for f in inspect.getmembers(rda_spanish) if inspect.isfunction(f[1])]
+    commands = [f for f in inspect.getmembers(rda_spanish) if f[0] in public_commands]
     commands_dict = {}
-    print('¿Qué deseas hacer?')
+    print('¿Qué tipo de análisis te interesa?')
     for i, c in enumerate(commands, start=1):
         name = c[0]
         docs = c[1].__doc__
