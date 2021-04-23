@@ -3,25 +3,19 @@ from datetime import date, timedelta, time
 import numpy as np
 import socket
 import os
+import argparse
 # import plotext as plt
 
 from plotter import Plotter as plt
 
-<<<<<<< HEAD
-##############################
-# Data Loading
-##############################
-
-def load_data(sheet_name, file_prefix = 'rdat_metro'):
-=======
-def load_data(file_prefix: str = 'rdat_metro'):
+def load_data(sheet_name, directory, file_prefix: str = 'rdat_metro'):
     '''Loads the Excel reports of the productivity.'''
->>>>>>> cli
     hostname = socket.gethostname()
-    if hostname == 'arch':
-        directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
-    else:
-        directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
+    if directory is None:
+        if hostname == 'arch':
+            directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
+        else:
+            directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
 
     df = pd.DataFrame()
     rda_files = []
@@ -29,11 +23,7 @@ def load_data(file_prefix: str = 'rdat_metro'):
 
     for f in os.listdir(directory):
         if f.startswith(file_prefix):
-            try:
-                df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
-            except:
-                print(f'No se encontró la hoja "{sheet_name}", favor de verificar el nombre.')
-                exit(1)
+            df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
             columns.append(df_tmp.columns)
             df = df.append(df_tmp)
             
@@ -44,9 +34,6 @@ def load_data(file_prefix: str = 'rdat_metro'):
 ##############################
 # TIME-RELATED REPORTS
 ##############################
-<<<<<<< HEAD
-def hourly_reports(df, plot_length, col = ''):
-=======
 def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filter: str = None):
     '''
     Analysis of the reports by hour of ocurrence.
@@ -61,7 +48,6 @@ def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filt
         - vespertino
         - nocturno
     '''
->>>>>>> cli
     cols = [
         'HORATLMI',
         'HORACTEI',
@@ -71,6 +57,9 @@ def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filt
 
     if col in cols:
         cols = [col]
+
+    if cm_to_filter is not None:
+        df = df[df['CMANTENI'] == cm_to_filter]
 
     for i, col in enumerate(cols):
         # remove nan values
@@ -169,39 +158,33 @@ def repetitions_analysis(df: pd.DataFrame):
         print(values)
         print()
 
-<<<<<<< HEAD
-def numeric_analysis(df):
-    print(df.describe())
-=======
 def numeric_analysis(df: pd.DataFrame, cm: str = None):
     if cm is None:
         df_int = df.select_dtypes('number')
     else:
         df_int = df[df['CMANTENI'] == cm].select_dtypes('number')
     print(df_int.describe())
->>>>>>> cli
 
-def main():
-    sheet_name = input('¿Qué hoja quieres analizar? ')
-    print('Cargando los datos...')
-    df = load_data(sheet_name)
+def main(argv = None):
 
-    cm = input('¿Qué CM te interesa? (Dejar en blanco para no filtrar datos por CM.) ')
-    if len(cm) > 2:
-        df_tmp = df[df['CMANTENI'] == cm]
+    # check arguments
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('-g', '--grafica', help='Ancho de gráfica', type = int, required = True)
+    parser.add_argument('-d', '--directory', help='xls files directory', type = str, required = False)
+    parser.add_argument('-cm', help='Centro de Mantenimiento', type = str, required = False)
+    parser.add_argument('-s', '--sheet', help='Sheet name for pandas', type = str, required = True)
+    parser.add_argument('-p', '--prefix', help='Common prefix of xls files', type=str, required = True)
+    # parser.add_argument('-th', '--hora', help='Tipo de hora', type=str, required = True)
 
-    if df_tmp.shape[0] == 0:
-        print('No se encontró ningún CM con el nombre propocionado.')
-        print('El nombre debe coincidir con alguno de los presentes en los reportes.')
-        print('Los únicos CM encontrados son:')
-        # for cm in df['CMANTENI'].unique():
-        for cm in sorted(df[df['CMANTENI'].notnull()]['CMANTENI'].unique()):
-            print(f'\t{cm}')
-        return
-    print(f'Los datos tienen {df.shape[1]} columnas y {df.shape[0]} renglones.')
+    args = parser.parse_args(argv)
+    df = load_data(args.sheet, args.directory, args.prefix)
 
-    df = df_tmp
-    
+    if args.cm is not None:
+        df_tmp = df[df['CMANTENI'] == args.cm]
+        if df_tmp.shape[0] < 1:
+            print('Your CM filter resulted in no rows.')
+            return 0
+        df = df_tmp
 
     # SPLIT DATA BY COLUMNS' TYPE
     # date_cols = df.select_dtypes('datetime')
@@ -210,8 +193,7 @@ def main():
     hourly_reports(df, 60, col = 'HORA_REAL')
 
     # daily reports - seem useless
-    # daily_reports(df[df['CMANTENI'] == 'CMABS'], 40)
-    # daily_reports(df, 142)
+    daily_reports(df, 142)
 
     # monthly reports
     monthly_report(df, 142)
@@ -220,6 +202,7 @@ def main():
     repetitions_analysis(df_obj)
 
     numeric_analysis(df)
+
 
 if __name__ == '__main__':
     main()
