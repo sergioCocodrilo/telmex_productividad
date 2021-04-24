@@ -23,7 +23,7 @@ from typing import Sequence
 from plotter import Plotter as plt
 
 def load_data(sheet_name, directory, file_prefix: str = 'rdat_metro'):
-    '''Loads the Excel reports of the productivity.'''
+    '''Loads the Excel reports of the productivity and returns a single df.'''
     hostname = socket.gethostname()
     if directory is None:
         if hostname == 'arch':
@@ -101,25 +101,14 @@ def hourly_reports(df: pd.DataFrame) -> list[dict]:
         time_df = pd.DataFrame(hour_data[col].astype(str).str[:2].astype(int))
 
         xy = time_df.value_counts().sort_index()
-        # xs, ys = [], []
-        # xs = [x for x in range(24)]
-
         xys = dict()
 
         for h in range(24):
             try:
-                # ys.append(xy[h])
                 xys[h] = xy[h]
             except KeyError:
-                # ys.append(0)
                 xys[h] = 0
 
-        
-                
-        # plot_length = plot_length if plot_length < 143 else 142
-        # plot = plt(plot_length)
-        # plot.set_values(xs, ys, 'HORA', 'Reportes')
-        # plot.show(col)
         d = dict()
         d['title'] = col
         d['cols'] = ('HORA', 'Reportes')
@@ -159,7 +148,7 @@ def instances_dictionary(instances: pd.Series, dates: list):
     
     return instances
 
-def daily_reports(df: pd.DataFrame, plot_length: int):
+def daily_reports(df: pd.DataFrame):
     # BUILD ALL DATES
     start_date = df['FECHA_REAL'].min().date()
     end_date = df['FECHA_REAL'].max().date()
@@ -175,22 +164,27 @@ def daily_reports(df: pd.DataFrame, plot_length: int):
     instances_by_day = df['FECHA_REAL'].dt.floor('d').value_counts()
     instances = instances_dictionary(instances_by_day, dates)
 
-    plot_length = plot_length if plot_length < 143 else 142
 
-    plot = plt(plot_length)
-    plot.set_values(instances.keys(), instances.values(), 'Día', 'Reportes')
-    plot.show('Reportes por día')
+    # plot = plt(plot_length)
+    # plot.set_values(instances.keys(), instances.values(), 'Día', 'Reportes')
+    # plot.show('Reportes por día')
 
-def monthly_report(df: pd.DataFrame, plot_length: str):
+    d = dict()
+    d['title'] = 'Reportes por día'
+    d['cols'] = ('Día', 'Reportes')
+    d['xys'] = instances
+    return [d]
+
+def monthly_report(df: pd.DataFrame):
     instances_by_month = df['FECHA_REAL'].groupby([df.FECHA_REAL.dt.year, df.FECHA_REAL.dt.month]).agg('count')
     instances_by_month = pd.DataFrame(instances_by_month)
     instances_by_month['year_month'] = instances_by_month.index.to_series().apply(lambda x: '{0}-{1:02}'.format(*x))
 
-    plot_length = plot_length if plot_length < 143 else 142
-
-    plot = plt(plot_length)
-    plot.set_values(instances_by_month['year_month'], instances_by_month['FECHA_REAL'], 'Mes', 'Reportes')
-    plot.show('Reportes por mes')
+    d = dict()
+    d['title'] = 'Reportes por mes'
+    d['cols'] = ('Mes', 'Reportes')
+    d['xys'] = dict(zip(instances_by_month['year_month'], instances_by_month['FECHA_REAL']))
+    return [d]
 
 def repetitions_analysis(df: pd.DataFrame):
     # For each column, counts the values and prints the first 8 rows
@@ -234,18 +228,28 @@ def main(argv = None):
 
     # hour analysis
     plt_values = hourly_reports(df)
+    # for d in plt_values:
+        # plot = plt(140)
+        # plot.set_values(d['xys'].keys(), d['xys'].values(), d['cols'][0], d['cols'][1])
+        # plot.show(d['title'])
+
+
+    # daily reports - seem useless
+    plt_values = daily_reports(df)
+    # for d in plt_values:
+        # plot = plt(140)
+        # plot.set_values(d['xys'].keys(), d['xys'].values(), d['cols'][0], d['cols'][1])
+        # plot.show(d['title'])
+
+
+    # monthly reports
+    plt_values = monthly_report(df)
     for d in plt_values:
         plot = plt(140)
         plot.set_values(d['xys'].keys(), d['xys'].values(), d['cols'][0], d['cols'][1])
         plot.show(d['title'])
 
     return 0
-
-    # daily reports - seem useless
-    daily_reports(df, 142)
-
-    # monthly reports
-    monthly_report(df, 142)
 
     df_obj = df.select_dtypes(object)
     repetitions_analysis(df_obj)
