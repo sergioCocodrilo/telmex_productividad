@@ -2,6 +2,9 @@
 '''
 Report generator of RDA files. This uses Matplotlib plots and the result is a
 Latex pdf.
+
+
+MAKING IT KIND OF OO
 '''
 import pandas as pd
 from datetime import date, timedelta, time
@@ -22,26 +25,27 @@ from typing import Sequence
 
 from plotter import Plotter as plt
 
-def load_data(sheet_name, directory, file_prefix: str = 'rdat_metro'):
-    '''Loads the Excel reports of the productivity and returns a single df.'''
-    hostname = socket.gethostname()
-    if directory is None:
-        if hostname == 'arch':
-            directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
-        else:
-            directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
+class Productivity_Analizer:
+    def __init__(self, sheet_name, directory, file_prefix: str = 'rdat_metro'):
+        '''Loads the Excel reports of the productivity and returns a single df.'''
+        hostname = socket.gethostname()
+        if directory is None:
+            if hostname == 'arch':
+                directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
+            else:
+                directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
 
-    df = pd.DataFrame()
-    rda_files = []
-    columns = []
+        df = pd.DataFrame()
+        rda_files = []
+        columns = []
 
-    for f in os.listdir(directory):
-        if f.startswith(file_prefix):
-            df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
-            columns.append(df_tmp.columns)
-            df = df.append(df_tmp)
-            
-    return df
+        for f in os.listdir(directory):
+            if f.startswith(file_prefix):
+                df_tmp = pd.read_excel(directory + f, sheet_name = sheet_name)
+                columns.append(df_tmp.columns)
+                df = df.append(df_tmp)
+                
+        self.df = df
 
 
 
@@ -164,11 +168,6 @@ def daily_reports(df: pd.DataFrame):
     instances_by_day = df['FECHA_REAL'].dt.floor('d').value_counts()
     instances = instances_dictionary(instances_by_day, dates)
 
-
-    # plot = plt(plot_length)
-    # plot.set_values(instances.keys(), instances.values(), 'Día', 'Reportes')
-    # plot.show('Reportes por día')
-
     d = dict()
     d['title'] = 'Reportes por día'
     d['cols'] = ('Día', 'Reportes')
@@ -248,8 +247,6 @@ def main(argv = None):
         plot = plt(140)
         plot.set_values(d['xys'].keys(), d['xys'].values(), d['cols'][0], d['cols'][1])
         plot.show(d['title'])
-
-    return 0
 
     df_obj = df.select_dtypes(object)
     repetitions_analysis(df_obj)
