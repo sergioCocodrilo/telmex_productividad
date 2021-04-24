@@ -1,10 +1,24 @@
+
+'''
+Report generator of RDA files. This uses Matplotlib plots and the result is a
+Latex pdf.
+'''
 import pandas as pd
 from datetime import date, timedelta, time
 import numpy as np
 import socket
 import os
 import argparse
+import copy
 # import plotext as plt
+
+# Latex
+from pylatex import Document, Section, Subsection, Command
+from pylatex.utils import italic, NoEscape
+
+# Typing
+from typing import Optional
+from typing import Sequence
 
 from plotter import Plotter as plt
 
@@ -34,7 +48,7 @@ def load_data(sheet_name, directory, file_prefix: str = 'rdat_metro'):
 ##############################
 # TIME-RELATED REPORTS
 ##############################
-def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filter: str = None):
+def hourly_reports(df: pd.DataFrame) -> list[dict]:
     '''
     Analysis of the reports by hour of ocurrence.
     Three types of time data are considered:
@@ -47,6 +61,29 @@ def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filt
         - matutino
         - vespertino
         - nocturno
+
+    Returns a list of dictionaries with the structure:
+        [
+            {
+                'title': 'HORA_REAL',
+                'cols': (col_a_title, col_b_title),
+                'xys': {
+                    'x0': 'y0',
+                    'x1': 'y1',
+                    ...
+                    },
+            },
+            {
+                'title': 'HORATLMF',
+                'cols': (col_a_title, col_b_title),
+                'xys': {
+                    'x0': 'y0',
+                    'x1': 'y1',
+                    ...
+                    },
+            },
+        ]
+
     '''
     cols = [
         'HORATLMI',
@@ -55,11 +92,7 @@ def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filt
         'HORA_REAL',
     ]
 
-    if col in cols:
-        cols = [col]
-
-    if cm_to_filter is not None:
-        df = df[df['CMANTENI'] == cm_to_filter]
+    plotting_values = []
 
     for i, col in enumerate(cols):
         # remove nan values
@@ -68,42 +101,51 @@ def hourly_reports(df: pd.DataFrame, plot_length: str, col: str = '', cm_to_filt
         time_df = pd.DataFrame(hour_data[col].astype(str).str[:2].astype(int))
 
         xy = time_df.value_counts().sort_index()
-        xs, ys = [], []
-        xs = [x for x in range(24)]
+        # xs, ys = [], []
+        # xs = [x for x in range(24)]
+
+        xys = dict()
 
         for h in range(24):
             try:
-                ys.append(xy[h])
+                # ys.append(xy[h])
+                xys[h] = xy[h]
             except KeyError:
-                ys.append(0)
-                
-        plot_length = plot_length if plot_length < 143 else 142
-        plot = plt(plot_length)
-        plot.set_values(xs, ys, 'HORA', 'Reportes')
-        plot.show(col)
+                # ys.append(0)
+                xys[h] = 0
 
-        # Análisis por turno
-        xys = {
+        
+                
+        # plot_length = plot_length if plot_length < 143 else 142
+        # plot = plt(plot_length)
+        # plot.set_values(xs, ys, 'HORA', 'Reportes')
+        # plot.show(col)
+        d = dict()
+        d['title'] = col
+        d['cols'] = ('HORA', 'Reportes')
+        d['xys'] = xys
+        plotting_values.append(copy.deepcopy(d))
+
+        # ship analysis
+        xys_ship = {
                 'mat' : 0,
                 'vesp': 0,
                 'noct': 0,
                 }
 
-        for x, y  in zip(xs, ys):
-            if 7 < x < 17:
-                xys['mat'] += y
-            elif 16 < x < 24:
-                xys['vesp'] += y
+        for x, y  in xys.items():
+            if 7 < int(x) < 17:
+                xys_ship['mat'] += y
+            elif 16 < int(x) < 24:
+                xys_ship['vesp'] += y
             else:
-                xys['noct'] += y
+                xys_ship['noct'] += y
 
-
-        plot = plt(plot_length)
-        plot.set_values(xys.keys(), xys.values(), 'Turno', 'Reportes')
-        plot.show(col)
-        print()
-        print()
-        print()
+        d['title'] = col + ' por turnos'
+        d['cols'] = ('Turno', 'Reportes')
+        d['xys'] = xys_ship
+        plotting_values.append(copy.deepcopy(d))
+    return plotting_values
 
 def instances_dictionary(instances: pd.Series, dates: list):
     # Make an dictionary of dates and instances (zeros included)
@@ -174,6 +216,7 @@ def main(argv = None):
     parser.add_argument('-cm', help='Centro de Mantenimiento', type = str, required = False)
     parser.add_argument('-s', '--sheet', help='Sheet name for pandas', type = str, required = True)
     parser.add_argument('-p', '--prefix', help='Common prefix of xls files', type=str, required = True)
+    parser.add_argument('-f', '--file', help='Output latex file', type=str, required = True)
     # parser.add_argument('-th', '--hora', help='Tipo de hora', type=str, required = True)
 
     args = parser.parse_args(argv)
@@ -190,7 +233,13 @@ def main(argv = None):
     # date_cols = df.select_dtypes('datetime')
 
     # hour analysis
-    hourly_reports(df, 60, col = 'HORA_REAL')
+    plt_values = hourly_reports(df)
+    for d in plt_values:
+        plot = plt(140)
+        plot.set_values(d['xys'].keys(), d['xys'].values(), d['cols'][0], d['cols'][1])
+        plot.show(d['title'])
+
+    return 0
 
     # daily reports - seem useless
     daily_reports(df, 142)
