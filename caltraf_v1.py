@@ -47,32 +47,56 @@ class Productivity_Analizer:
         for f in caltraf_files:
             df = pd.read_excel(directory + f, sheet_name = sheet_name)
             CM = df[df["CENTRO DE MANTENIMIENTO"] == cm].iloc[:,5:]
-            print("-" * 100)
-            print(CM)
+            # print("-" * 100)
+            # print(CM)
             
             for index in range(CM.shape[0]):
                 data[CM.iloc[index,1] +" - " + CM.iloc[index,0]].append(list(CM.iloc[index,2:].astype(int)))
         self.data = data 
+        self.plotting_data = []
 
 
     def caltraf_analysis(self):
-        print("\n\nPorcentaje de paso\n")
-        for k, v in self.data.items():
-            print(k)
-            for month in v:
+        # porcentaje de paso
+        # print("\n\nPorcentaje de paso\n")
+        for edificio, v in self.data.items():
+            # print(edificio)
+            xys = dict()
+            for i, month in enumerate(v, start = 1):
                 # 100% = COB, NC, OC, VACANTES + INC + TNP, BLOI, BLOE, FTS, FTE, OPR, ABANDONO, FALLA TEC.
                 total = sum(month[:5]) + sum(month[7:])
                 if total != month[5]:
                     raise ValueError("Error de suma del total")
                 porcentaje_de_paso = month[6] * 100 // total
-                print(f"[{'-'*porcentaje_de_paso}|{' '*(100-porcentaje_de_paso)}] {porcentaje_de_paso} %")
-        print("\n\nBloqueo interno\n")
-        for k, v in self.data.items():
-            print(k) # edificio
+                # print(f"[{'-'*porcentaje_de_paso}|{' '*(100-porcentaje_de_paso)}] {porcentaje_de_paso} %")
+                xys[i] = porcentaje_de_paso
+            
+            d = dict()
+            d['title'] = 'Porcentaje de paso ' + edificio
+            d['cols'] = ('Mes', 'Paso (%)')
+            d['xys'] = xys
+            self.plotting_data.append(copy.deepcopy(d))
+
+        # print("\n\nBloqueo interno\n")
+        for edificio, v in self.data.items():
+            # print(edificio) # edificio
             bloi = []
-            for month in v:
+            xys = dict()
+            for i, month in enumerate(v, start = 1):
                 bloi.append(month[7])
-            print(bloi)
+                xys[i] = month[7]
+            # print(bloi)
+            d = dict()
+            d['title'] = 'Bloqueo interno ' + edificio
+            d['cols'] = ('Mes', 'Bloqueos Internos')
+            d['xys'] = xys
+            self.plotting_data.append(copy.deepcopy(d))
+
+    def plot(self):
+        for d in self.plotting_data:
+            plot = plt(140)
+            plot.set_values(d['xys'].keys(), d['xys'].values(), d['cols'][0], d['cols'][1])
+            plot.show(d['title'])
 
 def main(argv = None):
 
@@ -103,6 +127,7 @@ def main(argv = None):
         # analyzer = Productivity_Analizer(args.area, args.sheet, args.directory, args.cm, args.cmcol, args.prefix)
         analyzer = Productivity_Analizer(args.sheet, args.directory, args.prefix, args.cm, args.cmcol)
         analyzer.caltraf_analysis()
+        analyzer.plot()
 
 if __name__ == '__main__':
     main()
