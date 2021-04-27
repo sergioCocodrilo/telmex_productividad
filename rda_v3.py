@@ -9,7 +9,7 @@ MAKING IT KIND OF OO
 import pandas as pd
 from datetime import date, timedelta, time
 import numpy as np
-import socket
+# import socket
 import os
 import argparse
 import copy
@@ -42,12 +42,6 @@ def instances_dictionary(instances: pd.Series, dates: list):
 class Productivity_Analizer:
     def __init__(self, sheet_name: str, directory: str, cm: str = None, file_prefix: str = 'rdat_metro'):
         '''Loads the Excel reports of the productivity and returns a single df.'''
-        hostname = socket.gethostname()
-        if directory is None:
-            if hostname == 'arch':
-                directory = '/home/sergio/Documents/TELMEX/Productividad/Datos/2020/rda/'
-            else:
-                directory = '/home/sergio/Documents/Telmex/Productividad/Data/2020/rda/'
 
         df = pd.DataFrame()
         rda_files = []
