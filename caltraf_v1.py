@@ -22,6 +22,7 @@ from collections import defaultdict
 from typing import Optional
 from typing import Sequence
 
+# My plotter
 from plotter import Plotter as plt
 
 
@@ -103,31 +104,17 @@ def main(argv = None):
     # check arguments
     parser = argparse.ArgumentParser()
     # parser.add_argument('-g', '--grafica', help='Ancho de gráfica', type = int, required = True)
-    parser.add_argument('-d', '--directory', help='xls files directory', type = str, required = False)
-    parser.add_argument('-cm', help='Centro de Mantenimiento', type = str, required = False)
-    parser.add_argument('-cmcol', help='Column to filter by CM (where the CM is)', type = str, required = False)
+    parser.add_argument('-d', '--directory', help='xls files directory', type = str, required = True)
+    parser.add_argument('-cm', help='Centro de Mantenimiento', type = str, required = True)
+    parser.add_argument('-cmcol', help='Column to filter by CM (where the CM is)', type = str, required = True)
     parser.add_argument('-s', '--sheet', help='Sheet name for pandas', type = str, required = True)
     parser.add_argument('-p', '--prefix', help='Common prefix of xls files', type=str, required = True)
-    parser.add_argument('-f', '--file', help='Output latex file', type=str, required = True)
-    parser.add_argument('-a', '--area', help='caltraf | rda | cobos', type=str, required = True)
-    # parser.add_argument('-th', '--hora', help='Tipo de hora', type=str, required = True)
 
     args = parser.parse_args(argv)
 
-    if args.area == 'rda':
-        analyzer = Productivity_Analizer(args.area, args.sheet, args.directory, args.cm, args.cmcol, args.prefix)
-        analyzer.hourly_reports()
-        analyzer.daily_reports()
-        analyzer.monthly_report()
-        analyzer.plot()
-        analyzer.repetitions_analysis()
-        analyzer.numeric_analysis()
-
-    if args.area == 'caltraf':
-        # analyzer = Productivity_Analizer(args.area, args.sheet, args.directory, args.cm, args.cmcol, args.prefix)
-        analyzer = Productivity_Analizer(args.sheet, args.directory, args.prefix, args.cm, args.cmcol)
-        analyzer.caltraf_analysis()
-        analyzer.plot()
+    analyzer = Productivity_Analizer(args.sheet, args.directory, args.prefix, args.cm, args.cmcol)
+    analyzer.caltraf_analysis()
+    analyzer.plot()
 
 if __name__ == '__main__':
     main()
