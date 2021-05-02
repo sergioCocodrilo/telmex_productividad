@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 def single_line_plot(plots):
     for plot in plots:
         x, y = plot['xys'].keys(), plot['xys'].values()
-        plt.plot(x, y)
+        # plt.plot(x, y)
+        plt.bar(x, y)
         plt.title(plot['title'])
         plt.legend()
         plt.show()

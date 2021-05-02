@@ -88,19 +88,13 @@ def count_cobos_by_date(df: pd.DataFrame):
 
         d['title'] = column + ' - cobos por día de la semana'
         d['cols'] = ('día', 'Cobos')
-        d['xys'] = series_counter(df[column].dt.dayofweek, range(1, 7))
+        d['xys'] = series_counter(df[column].dt.dayofweek, range(0, 7))
         dates_results.append(copy.deepcopy(d))
 
         d['title'] = column + ' - cobos por hora'
         d['cols'] = ('hora', 'Cobos')
         d['xys'] = series_counter(df[column].dt.hour, range(1, 25))
         dates_results.append(copy.deepcopy(d))
-
-
-        # dates_results[column + ' mensual'] = 
-        # dates_results[column + ' por dia'] = series_counter(df[column].dt.day, range(1, 32))
-        # dates_results[column + ' dia de la semana'] = series_counter(df[column].dt.dayofweek, range(7))
-        # dates_results[column + ' por hora'] = series_counter(df[column].dt.hour, range(25))
 
     return dates_results
 
@@ -131,14 +125,7 @@ def main(argv = None):
 
     # date analysis
     date_results = count_cobos_by_date(df)
-    # print(type(date_results))
-    # print(date_results.keys())
     slp(date_results)
-
-    # for title, counter in count_results.items():
-        # print('Count of', title)
-        # for index, count in counter.items():
-            # print(index, count)
 
     # numeric analysis
     # print(df.describe())
