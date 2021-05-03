@@ -20,28 +20,27 @@ def count_cobos_by_date(df: pd.DataFrame):
 
     # different ways of counting cobos:
     d = dict()
+
+    time_period = [
+        [' - cobos por mes',              'Mes',  'month',     range(1, 13)],
+        [' - cobos por día',              'Día',  'day',       range(1, 32)],
+        [' - cobos por día de la semana', 'Día',  'dayofweek', range(0, 7)],
+        [' - cobos por hora',             'Hora', 'hour',      range(1, 25)],
+        ]
+
     for column in date_columns:
-        d['title'] = column + ' - cobos por mes'
-        d['cols'] = ('Mes', 'Cobos')
-        d['xys'] = count_instances(df[column].dt.month, range(1, 13))
-        dates_results.append(copy.deepcopy(d))
-
-        d['title'] = column + ' - cobos por día'
-        d['cols'] = ('día', 'Cobos')
-        d['xys'] = count_instances(df[column].dt.day, range(1, 32))
-        dates_results.append(copy.deepcopy(d))
-
-        d['title'] = column + ' - cobos por día de la semana'
-        d['cols'] = ('día', 'Cobos')
-        d['xys'] = count_instances(df[column].dt.dayofweek, range(0, 7))
-        dates_results.append(copy.deepcopy(d))
-
-        d['title'] = column + ' - cobos por hora'
-        d['cols'] = ('hora', 'Cobos')
-        d['xys'] = count_instances(df[column].dt.hour, range(1, 25))
-        dates_results.append(copy.deepcopy(d))
-
+        series = df[column]
+        for l in time_period:
+            dates_results.append(make_plot(column + l[0], (l[1], 'Cobos'), count_instances(series, l[3], l[2])))
     return dates_results
+
+def make_plot(title: str, cols: tuple, xys: dict):
+    d = dict()
+    d['title'] = title
+    d['cols'] = cols
+    d['xys'] = xys
+    return copy.deepcopy(d)
+
 
 def count_cobos_by_category(df: pd.DataFrame):
     df = df.select_dtypes(object)
