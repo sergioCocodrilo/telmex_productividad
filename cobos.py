@@ -44,10 +44,25 @@ def make_plot(title: str, cols: tuple, xys: dict):
 
 def count_cobos_by_category(df: pd.DataFrame):
     df = df.select_dtypes(object)
+    category_results = []
     for c in df.columns:
         most_common = df[c].value_counts()[:8]
-        print(most_common)
-        print()
+        category_results.append(most_common)
+        # print(most_common)
+        # print()
+    return category_results
+
+def cobos_analysis(df: pd.DataFrame):
+    # date analysis
+    date_results = count_cobos_by_date(df)
+
+    # numeric analysis
+    numeric_results = df.describe()
+
+    # object analysis
+    category_results = count_cobos_by_category(df)
+
+    return (date_results, numeric_results, category_results)
 
 
 def main(argv = None):
@@ -75,7 +90,7 @@ def main(argv = None):
     # print(df.describe())
 
     # object analysis
-    count_cobos_by_category(df)
+    category_results = count_cobos_by_category(df)
     
 
 if __name__ == '__main__':
