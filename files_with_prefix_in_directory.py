@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-def read_data(directory: str, prefix: str, sheet_name: str = None):
+def read_files(directory: str, prefix: str, sheet_name: str):
     df = pd.DataFrame()
     read_files = 0
     for f in os.listdir(directory):
